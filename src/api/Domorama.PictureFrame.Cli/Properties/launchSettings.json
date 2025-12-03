@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "raDom.PictureFrame.Cli": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}
