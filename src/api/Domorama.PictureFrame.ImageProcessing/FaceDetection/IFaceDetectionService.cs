@@ -5,7 +5,6 @@ namespace Domorama.PictureFrame.ImageProcessing.FaceDetection;
 public interface IFaceDetectionService
 {
     IEnumerable<DetectedFace> DetectFaces(Mat image);
-    DetectedEyes? DetectEyes(Mat image, DetectedFace detectedFace);
 }
 
 public record DetectedFace(Rect FaceArea)

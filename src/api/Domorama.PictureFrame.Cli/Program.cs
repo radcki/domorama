@@ -7,6 +7,7 @@ using OpenCvSharp;
 using Domorama.PictureFrame.ImageProcessing.ColorPallete;
 using Domorama.PictureFrame.ImageProcessing.FaceDetection;
 using Domorama.PictureFrame.ImageProcessing.FaceDetection.HaarCascade;
+using Domorama.PictureFrame.ImageProcessing.FaceDetection.ONNX;
 using Domorama.PictureFrame.ImageProcessing.Geocoding;
 using Domorama.PictureFrame.ImageProcessing.Geocoding.Nominatim;
 using Domorama.PictureFrame.ImageProcessing.Metadata;
@@ -24,7 +25,8 @@ namespace Domorama.PictureFrame.Cli
                           .AddSingleton<GeoLocationService>()
                           .AddSingleton<NominatimApiClient>()
                           .AddTransient<IDominantColorService, DominantColorService>()
-                          .AddSingleton<IFaceDetectionService, CascadeFaceDetectionService>()
+                          .AddSingleton<IFaceDetectionService, FaceOnnxDetectionService>()
+                          // .AddSingleton<IFaceDetectionService, CascadeFaceDetectionService>()
                           .AddSingleton<FilesystemPictureDataSourceConfiguration>(x => new FilesystemPictureDataSourceConfiguration()
                                                                                        {
                                                                                            Directories =
