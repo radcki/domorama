@@ -1,18 +1,64 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Colourful" Version="3.2.0" />
+    <PackageReference Include="FaceONNX" Version="4.1.1.2" />
     <PackageReference Include="MetadataExtractor" Version="2.9.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="OpenCvSharp4" Version="4.11.0.20250507" />
+    <PackageReference Include="OpenCvSharp4.Extensions" Version="4.11.0.20250507" />
     <PackageReference Include="System.Net.Http.Json" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="FaceDetection\haarcascade_eye_tree_eyeglasses.xml" />
+    <None Remove="FaceDetection\haarcascade_frontalface_alt.xml" />
+    <None Remove="FaceDetection\haarcascade_frontalface_alt2.xml" />
+    <None Remove="FaceDetection\haarcascade_frontalface_alt_tree.xml" />
+    <None Remove="FaceDetection\haarcascade_frontalface_default.xml" />
+    <None Remove="FaceDetection\haarcascade_smile.xml" />
+    <Content Update="FaceDetection\HaarCascade\haarcascade_eye_tree_eyeglasses.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Update="FaceDetection\HaarCascade\haarcascade_frontalface_alt.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Update="FaceDetection\HaarCascade\haarcascade_frontalface_alt2.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Update="FaceDetection\HaarCascade\haarcascade_frontalface_alt_tree.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Update="FaceDetection\HaarCascade\haarcascade_frontalface_default.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Remove="FaceDetection\HaarCascade\haarcascade_eye_tree_eyeglasses.xml" />
+    <Content Include="FaceDetection\HaarCascade\haarcascade_eye_tree_eyeglasses.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Remove="FaceDetection\HaarCascade\haarcascade_frontalface_alt.xml" />
+    <Content Include="FaceDetection\HaarCascade\haarcascade_frontalface_alt.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Remove="FaceDetection\HaarCascade\haarcascade_frontalface_alt2.xml" />
+    <Content Include="FaceDetection\HaarCascade\haarcascade_frontalface_alt2.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Remove="FaceDetection\HaarCascade\haarcascade_frontalface_alt_tree.xml" />
+    <Content Include="FaceDetection\HaarCascade\haarcascade_frontalface_alt_tree.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Remove="FaceDetection\HaarCascade\haarcascade_frontalface_default.xml" />
+    <Content Include="FaceDetection\HaarCascade\haarcascade_frontalface_default.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

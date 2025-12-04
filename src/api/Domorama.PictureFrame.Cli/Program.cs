@@ -1,10 +1,16 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
+using Domorama.PictureFrame.Core.DataSource;
+using Domorama.PictureFrame.Core.DataSource.Filesystem;
 using Microsoft.Extensions.DependencyInjection;
 using OpenCvSharp;
 using Domorama.PictureFrame.ImageProcessing.ColorPallete;
+using Domorama.PictureFrame.ImageProcessing.FaceDetection;
+using Domorama.PictureFrame.ImageProcessing.FaceDetection.HaarCascade;
+using Domorama.PictureFrame.ImageProcessing.FaceDetection.ONNX;
 using Domorama.PictureFrame.ImageProcessing.Geocoding;
 using Domorama.PictureFrame.ImageProcessing.Geocoding.Nominatim;
+using Domorama.PictureFrame.ImageProcessing.Metadata;
 using Domorama.PictureFrame.ImageProcessing.Utils;
 
 namespace Domorama.PictureFrame.Cli
@@ -15,30 +21,48 @@ namespace Domorama.PictureFrame.Cli
         {
             var services = new ServiceCollection()
                           .AddHttpClient()
-                          .AddSingleton<GeoLocationExtractor>()
+                          .AddTransient<MetadataExtractionService>()
+                          .AddSingleton<GeoLocationService>()
                           .AddSingleton<NominatimApiClient>()
                           .AddTransient<IDominantColorService, DominantColorService>()
+                          .AddSingleton<IFaceDetectionService, FaceOnnxDetectionService>()
+                          // .AddSingleton<IFaceDetectionService, CascadeFaceDetectionService>()
+                          .AddSingleton<FilesystemPictureDataSourceConfiguration>(x => new FilesystemPictureDataSourceConfiguration()
+                                                                                       {
+                                                                                           Directories =
+                                                                                           [
+                                                                                               @"E:\2025\2025-08-09"
+                                                                                           ]
+                                                                                       })
+                          .AddTransient<IPictureDataSource, FilesystemPictureDataSource>()
                           .BuildServiceProvider();
 
-            Console.WriteLine("Hello, World!");
-            var geoLocationExtractor = services.GetRequiredService<GeoLocationExtractor>();
+            Console.WriteLine("Initialized");
+            var dataSource = services.GetRequiredService<IPictureDataSource>();
+            var metadataExtractor = services.GetRequiredService<MetadataExtractionService>();
+            var geoLocationExtractor = services.GetRequiredService<GeoLocationService>();
+            var faceDetectionService = services.GetRequiredService<IFaceDetectionService>();
             var dominantColorService = services.GetRequiredService<IDominantColorService>();
-            var geoFilePath = @"E:\2025\2025-08-09\DSCF4178.JPG";
 
-            var geolocation = geoLocationExtractor.GetGeolocationFromFile(geoFilePath);
-            if (geolocation != null)
+            var pictures = await dataSource.ScanAsync().ToListAsync();
+
+            foreach (var metadata in pictures)
             {
-                //var address = await geoLocationExtractor.GetAddressForLocation(geolocation.Value);
-            }
-
-            var files = Directory.GetFiles(@"E:\2025\2025-08-09\", "*.jpg").OrderBy(x => Guid.NewGuid()).ToList();
-            
-            foreach (var path in files)
-            {
-                var imgMat = Cv2.ImRead(path, ImreadModes.Unchanged);
-                MatUtils.ResizeToCover(imgMat, new Size(500, 500));
-
+                var captureData = metadataExtractor.ExtractCaptureDateFromFile(metadata.Path);
+                var geolocation = metadataExtractor.ExtractGeolocationFromFile(metadata.Path);
+                if (geolocation != null)
+                {
+                    var address = await geoLocationExtractor.GetAddressForLocation(geolocation.Value);
+                }
+                var imgMat = Cv2.ImRead(metadata.Path, ImreadModes.Unchanged);
+                MatUtils.ResizeToCover(imgMat, new Size(800, 800));
+                var faces = faceDetectionService.DetectFaces(imgMat).ToList();
+                foreach (var detectedFace in faces)
+                {
+                    Cv2.Rectangle(imgMat, detectedFace.FaceArea, Scalar.Red, 2);
+                }
                 var dominantColors = dominantColorService.GetDominantColorsFromMat(imgMat);
+
                 var colorTileSize = new Size(imgMat.Width / dominantColors.Count, 100);
                 for (var i = 0; i < dominantColors.Count; i++)
                 {

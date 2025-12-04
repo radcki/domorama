@@ -37,6 +37,8 @@ ScaffoldingReadMe.txt
 *.snupkg
 
 # Others
+.vs
+.idea
 ~$*
 *~
 CodeCoverage/
