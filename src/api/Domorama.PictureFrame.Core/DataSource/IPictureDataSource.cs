@@ -4,5 +4,5 @@ namespace Domorama.PictureFrame.Core.DataSource;
 
 public interface IPictureDataSource
 {
-    public IAsyncEnumerable<PictureMetadata> ScanAsync(CancellationToken cancellationToken = default);
+    public IAsyncEnumerable<FilesystemRecord> ScanAsync(CancellationToken cancellationToken = default);
 }

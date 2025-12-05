@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Colourful" Version="3.2.0" />
     <PackageReference Include="FaceONNX" Version="4.1.1.2" />
+    <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.9.1" />
     <PackageReference Include="MetadataExtractor" Version="2.9.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
