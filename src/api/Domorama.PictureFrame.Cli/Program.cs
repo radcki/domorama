@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using Domorama.PictureFrame.Core.DataSource;
 using Domorama.PictureFrame.Core.DataSource.Filesystem;
+using Domorama.PictureFrame.Core.Library.Services;
 using Domorama.PictureFrame.Core.Model;
 using Microsoft.Extensions.DependencyInjection;
 using OpenCvSharp;
@@ -36,6 +37,8 @@ namespace Domorama.PictureFrame.Cli
                                                                                            ]
                                                                                        })
                           .AddTransient<FilesystemPictureDataSource>()
+                          .AddSingleton<FileGroupingServiceConfiguration>()
+                          .AddTransient<FileGroupingService>()
                           .BuildServiceProvider();
 
             Console.WriteLine("Initialized");
@@ -44,6 +47,7 @@ namespace Domorama.PictureFrame.Cli
             var geoLocationExtractor = services.GetRequiredService<GeoLocationService>();
             var faceDetectionService = services.GetRequiredService<IFaceDetectionService>();
             var dominantColorService = services.GetRequiredService<IDominantColorService>();
+            var fileGroupingService = services.GetRequiredService<FileGroupingService>();
 
             var sw = Stopwatch.StartNew();
             var files = await dataSource.ScanAsync().ToListAsync();
@@ -52,16 +56,29 @@ namespace Domorama.PictureFrame.Cli
                 = sw.Elapsed.TotalSeconds;
             Console.WriteLine($"{files.Count} files to check");
             var sw2 = Stopwatch.StartNew();
-            ConcurrentBag<BaseFileInfo> fileInfos = [];
-            foreach (var filesystemRecord in files)
-            {
-                var info = await dataSource.ReadBaseFileInfo(filesystemRecord);
-                fileInfos.Add(info);
-                Console.WriteLine($"{fileInfos.Count} / {files.Count} done");
-            }
+            ConcurrentBag<BasicFileInfo> fileInfos = [];
+            await Parallel.ForEachAsync(files,
+                                        new ParallelOptions() { MaxDegreeOfParallelism = 5 },
+                                        async (filesystemRecord, token) =>
+                                        {
+                                            var info = await dataSource.ReadBasicFileInfo(filesystemRecord);
+                                            fileInfos.Add(info);
+                                            Console.WriteLine($"{fileInfos.Count} / {files.Count} done");
+                                        });
+            // foreach (var filesystemRecord in files)
+            // {
+            //     var info = await dataSource.ReadBaseFileInfo(filesystemRecord);
+            //     fileInfos.Add(info);
+            //     Console.WriteLine($"{fileInfos.Count} / {files.Count} done");
+            // }
 
             sw2.Stop();
             var infoReadTime = sw2.Elapsed.TotalSeconds;
+            
+            var sw3 = Stopwatch.StartNew();
+            var fileGroups = fileGroupingService.GroupFiles(fileInfos);
+            sw3.Stop();
+            var groupingTime = sw3.Elapsed.TotalMilliseconds;
 
             //
             // foreach (var metadata in pictures)
