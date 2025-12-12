@@ -1,4 +1,6 @@
 ﻿using System.Diagnostics;
+using Domorama.PictureFrame.ImageProcessing.FaceDetection.Model;
+using Domorama.PictureFrame.ImageProcessing.Model;
 using Domorama.PictureFrame.ImageProcessing.Utils;
 using OpenCvSharp;
 
@@ -24,20 +26,19 @@ namespace Domorama.PictureFrame.ImageProcessing.FaceDetection.HaarCascade
             Cv2.CvtColor(src, grey, ColorConversionCodes.BGR2GRAY);
             var small = new Mat();
             Cv2.Resize(grey, small, new Size(0, 0), faceScaling, faceScaling);
-            
+
             var faces = new List<Rect>();
             foreach (var angle in new[] { 0, -25, 25 })
             {
                 var rotatedSmall = MatUtils.RotateImage(small, angle);
                 var detectedFaces = _faceClassifier.DetectMultiScale(rotatedSmall, 1.1, 5);
-   
+
                 if (angle != 0 && detectedFaces.Any())
                 {
                     foreach (var detectedFace in detectedFaces)
                     {
                         var mask = new Mat(rotatedSmall.Size(), MatType.CV_8UC1, new Scalar(0));
                         mask[detectedFace].SetTo(new Scalar(255));
-                        var a = new Mat();;
                         var unrotatedMask = MatUtils.RotateImage(mask, -angle);
 
                         faces.Add(Cv2.BoundingRect(unrotatedMask));
@@ -58,13 +59,14 @@ namespace Domorama.PictureFrame.ImageProcessing.FaceDetection.HaarCascade
             {
                 var faceArea = MatUtils.ScaleRect(face, 1 / faceScaling);
 
-                yield return new DetectedFace(faceArea);
+                yield return new DetectedFace(new PixelBox(new Pixel(faceArea.Left, faceArea.Top), new PixelSize(faceArea.Width, faceArea.Height)));
             }
         }
 
         public DetectedEyes? DetectEyes(Mat image, DetectedFace detectedFace)
         {
-            using var src = image[detectedFace.FaceArea].Clone();
+            var boundingRect = detectedFace.BoundingBox.ToRect();
+            using var src = image[boundingRect].Clone();
             var expectedWidth = 300;
             var faceScaling = 1 / (src.Cols / (double)expectedWidth);
             var grey = new Mat();
@@ -80,8 +82,8 @@ namespace Domorama.PictureFrame.ImageProcessing.FaceDetection.HaarCascade
                 return null;
             }
 
-            var leftEye = MatUtils.MoveRect(MatUtils.ScaleRect(twoLargestEyes.MinBy(x => x.X), 1 / faceScaling), detectedFace.FaceArea.Location);
-            var rightEye = MatUtils.MoveRect(MatUtils.ScaleRect(twoLargestEyes.MaxBy(x => x.X), 1 / faceScaling), detectedFace.FaceArea.Location);
+            var leftEye = MatUtils.MoveRect(MatUtils.ScaleRect(twoLargestEyes.MinBy(x => x.X), 1 / faceScaling), boundingRect.Location);
+            var rightEye = MatUtils.MoveRect(MatUtils.ScaleRect(twoLargestEyes.MaxBy(x => x.X), 1 / faceScaling), boundingRect.Location);
 
 
             return new DetectedEyes(new DetectedEye(leftEye), new DetectedEye(rightEye));

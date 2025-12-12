@@ -28,12 +28,12 @@ public class FileGroupingService(FileGroupingServiceConfiguration configuration)
                 matchFound = false;
                 if (configuration.MatchByFilenameInSameDirectory)
                 {
-                    foreach (var grouping in matches.GroupBy(x => x.FilesystemRecord.Directory).ToList())
+                    foreach (var grouping in matches.GroupBy(x => x.FilesystemRecord.Subdirectory).ToList())
                     {
                         var directory = grouping.Key;
                         var filenames = grouping.Select(x => Path.GetFileNameWithoutExtension(x.FilesystemRecord.Filename))
                                                 .ToList();
-                        var filenameMatches = open.Where(x => x.FilesystemRecord.Directory == directory
+                        var filenameMatches = open.Where(x => x.FilesystemRecord.Subdirectory == directory
                                                               && filenames.Contains(Path.GetFileNameWithoutExtension(x.FilesystemRecord.Filename)))
                                                   .ToList();
                         foreach (var match in filenameMatches)
@@ -84,7 +84,8 @@ public class FileGroupingService(FileGroupingServiceConfiguration configuration)
     {
         if (configuration.MatchByFilenameInSameDirectory)
         {
-            var collection = pictureFileCollections.FirstOrDefault(x => x.Items.Any(s => s.FilesystemRecord.Directory == newFile.FilesystemRecord.Directory
+            var collection = pictureFileCollections.FirstOrDefault(x => x.Items.Any(s => s.FilesystemRecord.BasePath == newFile.FilesystemRecord.BasePath 
+                                                                                         && s.FilesystemRecord.Subdirectory == newFile.FilesystemRecord.Subdirectory
                                                                                          && Path.GetFileNameWithoutExtension(s.FilesystemRecord.Filename) == Path.GetFileNameWithoutExtension(newFile.FilesystemRecord.Filename)));
             if (collection != null)
             {

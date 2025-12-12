@@ -12,20 +12,20 @@ public class FileLibrary(FileGroupingService fileGroupingService, FilesystemPict
 
     public async Task Update(List<FilesystemRecord> filesystemRecords)
     {
-        var knownFilesToRemove = _knownFiles.Where(knownFile => filesystemRecords.All(newFile => newFile.GetPath() != knownFile.FilesystemRecord.GetPath())).ToList();
+        var knownFilesToRemove = _knownFiles.Where(knownFile => filesystemRecords.All(newFile => newFile.GetFullPath() != knownFile.FilesystemRecord.GetFullPath())).ToList();
         foreach (var fileToRemove in knownFilesToRemove)
         {
             RemoveFile(fileToRemove);
         }
 
-        var changedFiles = _knownFiles.Where(knownFile => filesystemRecords.Any(newFile => knownFile.FilesystemRecord.GetPath() == newFile.GetPath()
+        var changedFiles = _knownFiles.Where(knownFile => filesystemRecords.Any(newFile => knownFile.FilesystemRecord.GetFullPath() == newFile.GetFullPath()
                                                                                            && knownFile.FilesystemRecord.ByteCount != newFile.ByteCount));
         foreach (var outdatedFile in changedFiles)
         {
             RemoveFile(outdatedFile);
         }
 
-        var newFiles = filesystemRecords.Where(newFile => _knownFiles.All(knownFile => knownFile.FilesystemRecord.GetPath() != newFile.GetPath()));
+        var newFiles = filesystemRecords.Where(newFile => _knownFiles.All(knownFile => knownFile.FilesystemRecord.GetFullPath() != newFile.GetFullPath()));
         List<BasicFileInfo> filesToGroup = [];
         foreach (var newFile in newFiles)
         {

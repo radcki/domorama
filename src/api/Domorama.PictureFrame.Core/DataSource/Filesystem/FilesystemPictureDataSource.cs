@@ -54,7 +54,8 @@ public class FilesystemPictureDataSource(FilesystemPictureDataSourceConfiguratio
                     break;
                 }
 
-                var filesystemRecord = new FilesystemRecord(fileInfo.DirectoryName ?? "", fileInfo.Name, fileInfo.Length);
+                var subdirectory = fileInfo.DirectoryName?.Remove(0,sourceDirectory.Length);
+                var filesystemRecord = new FilesystemRecord(sourceDirectory, subdirectory ?? "", fileInfo.Name, fileInfo.Length);
 
                 yield return filesystemRecord;
             }
@@ -63,7 +64,7 @@ public class FilesystemPictureDataSource(FilesystemPictureDataSourceConfiguratio
 
     public async Task<BasicFileInfo> ReadBasicFileInfo(FilesystemRecord filesystemRecord)
     {
-        var path = filesystemRecord.GetPath();
+        var path = filesystemRecord.GetFullPath();
         await using var fileStream = new FileStream(path, FileMode.Open);
         var info = GetImageInfo(fileStream);
         var isPicture = info != null;
