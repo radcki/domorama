@@ -58,14 +58,15 @@ namespace Domorama.PictureFrame.ImageProcessing.FaceDetection.HaarCascade
             foreach (var face in faces)
             {
                 var faceArea = MatUtils.ScaleRect(face, 1 / faceScaling);
-
-                yield return new DetectedFace(new PixelBox(new Pixel(faceArea.Left, faceArea.Top), new PixelSize(faceArea.Width, faceArea.Height)));
+                var pixelBox = new PixelBox(new Pixel(faceArea.Left, faceArea.Top), new PixelSize(faceArea.Width, faceArea.Height));
+                
+                yield return new DetectedFace(RelativeBox.FromPixelBox(pixelBox, PixelSize.FromSize(image.Size())));
             }
         }
 
         public DetectedEyes? DetectEyes(Mat image, DetectedFace detectedFace)
         {
-            var boundingRect = detectedFace.BoundingBox.ToRect();
+            var boundingRect = detectedFace.BoundingBox.ToRect(PixelSize.FromSize(image.Size()));
             using var src = image[boundingRect].Clone();
             var expectedWidth = 300;
             var faceScaling = 1 / (src.Cols / (double)expectedWidth);

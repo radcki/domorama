@@ -18,10 +18,12 @@ public class FaceOnnxDetectionService : IFaceDetectionService
         var detections = _faceDetector.Forward(image.ToBitmap());
         foreach (var faceDetectionResult in detections)
         {
-            yield return new DetectedFace(new PixelBox(new Pixel(faceDetectionResult.Box.X,
-                                                                 faceDetectionResult.Box.Y),
-                                                       new PixelSize(faceDetectionResult.Box.Width,
-                                                                     faceDetectionResult.Box.Height)));
+            var pixelBox = new PixelBox(new Pixel(faceDetectionResult.Box.X,
+                                                  faceDetectionResult.Box.Y),
+                                        new PixelSize(faceDetectionResult.Box.Width,
+                                                      faceDetectionResult.Box.Height));
+            
+            yield return new DetectedFace(RelativeBox.FromPixelBox(pixelBox, PixelSize.FromSize(image.Size())));
         }
     }
 }

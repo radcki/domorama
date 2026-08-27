@@ -1,11 +1,12 @@
-﻿using System.Collections.Concurrent;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Security.Cryptography;
-using System.Text;
-using Domorama.PictureFrame.Core.Model;
+﻿using Domorama.PictureFrame.Core.Model;
 using ImageMagick;
 using OpenCvSharp;
+using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Runtime.Intrinsics.Arm;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Domorama.PictureFrame.Core.DataSource.Filesystem;
 
@@ -54,7 +55,7 @@ public class FilesystemPictureDataSource(FilesystemPictureDataSourceConfiguratio
                     break;
                 }
 
-                var subdirectory = fileInfo.DirectoryName?.Remove(0,sourceDirectory.Length);
+                var subdirectory = fileInfo.DirectoryName?.Remove(0, sourceDirectory.Length);
                 var filesystemRecord = new FilesystemRecord(sourceDirectory, subdirectory ?? "", fileInfo.Name, fileInfo.Length);
 
                 yield return filesystemRecord;
@@ -62,20 +63,15 @@ public class FilesystemPictureDataSource(FilesystemPictureDataSourceConfiguratio
         }
     }
 
-    public async Task<BasicFileInfo> ReadBasicFileInfo(FilesystemRecord filesystemRecord)
+    public async Task<FileLibraryEntry> ReadBasicFileInfo(FilesystemRecord filesystemRecord)
     {
         var path = filesystemRecord.GetFullPath();
         await using var fileStream = new FileStream(path, FileMode.Open);
-        var info = GetImageInfo(fileStream);
-        var isPicture = info != null;
-        if (!isPicture)
-        {
-            return BasicFileInfo.NonPicture(filesystemRecord);
-        }
-
-        var isOpenCvReadable = _opencvSupportedFormats.Contains(info.Format);
+        
         fileStream.Position = 0;
-        var md5 = CheckMd5(fileStream);
+
+        var crc32 = CheckCrc32(fileStream);
+        // var md5 = CheckMd5(fileStream);
 
         // var bytes = await File.ReadAllBytesAsync(path);
         // var md5 = CheckMd5(bytes);
@@ -91,7 +87,21 @@ public class FilesystemPictureDataSource(FilesystemPictureDataSourceConfiguratio
         //     Mat.FromStream(stream, ImreadModes.Unchanged);
         // }
 
-        return BasicFileInfo.Picture(filesystemRecord, isOpenCvReadable, md5);
+        return new FileLibraryEntry(filesystemRecord, crc32);
+    }
+
+    public async Task<FileCompatibilityCheckResult> CheckFileCompatibility(FilesystemRecord filesystemRecord)
+    {
+        var path = filesystemRecord.GetFullPath();
+        await using var fileStream = new FileStream(path, FileMode.Open);
+        var imageInfo = GetImageInfo(fileStream);
+        var isPicture = imageInfo != null;
+        var isOpenCvReadable = imageInfo != null && _opencvSupportedFormats.Contains(imageInfo.Format);
+        return new FileCompatibilityCheckResult()
+               {
+                   IsOpenCvReadable = isOpenCvReadable,
+                   IsPicture = isPicture
+               };
     }
 
     private MagickImage? GetImageInfo(Stream stream)
@@ -138,14 +148,21 @@ public class FilesystemPictureDataSource(FilesystemPictureDataSourceConfiguratio
     {
         using var md5 = MD5.Create();
         var hash = md5.ComputeHash(bytes);
-        return BitConverter.ToString(hash).Replace("-", "").ToLower();
+        return Convert.ToHexString(hash);
     }
 
     private string CheckMd5(Stream stream)
     {
         using var md5 = MD5.Create();
         var hash = md5.ComputeHash(stream);
-        return BitConverter.ToString(hash).Replace("-", "").ToLower();
+        return Convert.ToHexString(hash);
+    }
+
+    private string CheckCrc32(Stream stream)
+    {
+        var crc32 = new System.IO.Hashing.Crc32();
+        crc32.Append(stream);
+        return Convert.ToHexString(crc32.GetHashAndReset());
     }
 }
 

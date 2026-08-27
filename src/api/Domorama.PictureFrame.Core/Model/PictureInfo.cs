@@ -4,15 +4,8 @@ using Domorama.PictureFrame.ImageProcessing.Geocoding.Model;
 
 namespace Domorama.PictureFrame.Core.Model;
 
-public class PictureFrameEntry(BasicFileInfoCollection fileInfoCollection)
+public class PictureInfo()
 {
-    private BasicFileInfoCollection FileInfoCollection { get; init; } = fileInfoCollection;
-}
-
-public class PictureInfo(BasicFileInfo fileInfo)
-{
-    public BasicFileInfo FileInfo { get; set; } = fileInfo;
-
     public bool IsCaptureDateExtractionDon { get; set; } = false;
     public bool IsGeolocationExtractionDone { get; set; } = false;
     public bool IsDominantColorExtractionDone { get; set; } = false;

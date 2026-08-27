@@ -2,7 +2,10 @@
 using System.Diagnostics;
 using Domorama.PictureFrame.Core.DataSource;
 using Domorama.PictureFrame.Core.DataSource.Filesystem;
-using Domorama.PictureFrame.Core.Library.Services;
+using Domorama.PictureFrame.Core.Library;
+using Domorama.PictureFrame.Core.Library.DataStorage;
+using Domorama.PictureFrame.Core.Library.Files;
+using Domorama.PictureFrame.Core.Library.Files.Services;
 using Domorama.PictureFrame.Core.Model;
 using Microsoft.Extensions.DependencyInjection;
 using OpenCvSharp;
@@ -39,6 +42,9 @@ namespace Domorama.PictureFrame.Cli
                           .AddTransient<FilesystemPictureDataSource>()
                           .AddSingleton<FileGroupingServiceConfiguration>()
                           .AddTransient<FileGroupingService>()
+                          .AddTransient(typeof(IDataStorage<>), typeof(JsonDataStorage<>))
+                          .AddSingleton<FileLibrary>()
+                          .AddLogging()
                           .BuildServiceProvider();
 
             Console.WriteLine("Initialized");
@@ -48,15 +54,35 @@ namespace Domorama.PictureFrame.Cli
             var faceDetectionService = services.GetRequiredService<IFaceDetectionService>();
             var dominantColorService = services.GetRequiredService<IDominantColorService>();
             var fileGroupingService = services.GetRequiredService<FileGroupingService>();
+            var fileLibrary = services.GetRequiredService<FileLibrary>();
 
+            await fileLibrary.Load();
+            fileLibrary.EnableAutosave();
+            
             var sw = Stopwatch.StartNew();
             var files = await dataSource.ScanAsync().ToListAsync();
             sw.Stop();
+            var changesCheckProgress = new Progress<FileLibraryTaskProgress>();
+            changesCheckProgress.ProgressChanged += (sender, progress) => { Console.WriteLine($"Changes check progress: {progress.Done}/{progress.Total} (Elapsed: {progress.Elapsed:g})"); };
+
+            await fileLibrary.FindChanges(files, changesCheckProgress);
+
+            var compatibilityCheckProgress = new Progress<FileLibraryTaskProgress>();
+            compatibilityCheckProgress.ProgressChanged += (sender, progress) => { Console.WriteLine($"Compatibility check progress: {progress.Done}/{progress.Total} (Elapsed: {progress.Elapsed:g})"); };
+
+            await fileLibrary.CheckMissingFileCompatibility(compatibilityCheckProgress);
+
+            var groupingProgress = new Progress<FileLibraryTaskProgress>();
+            groupingProgress.ProgressChanged += (sender, progress) => { Console.WriteLine($"Grouping progress: {progress.Done}/{progress.Total} (Elapsed: {progress.Elapsed:g})"); };
+
+            await fileLibrary.PerformPendingFileGrouping(groupingProgress);
+
+
             var scanTime
                 = sw.Elapsed.TotalSeconds;
-            Console.WriteLine($"{files.Count} files to check");
+            Console.WriteLine($"{files.Count} files to index");
             var sw2 = Stopwatch.StartNew();
-            ConcurrentBag<BasicFileInfo> fileInfos = [];
+            ConcurrentBag<FileLibraryEntry> fileInfos = [];
             await Parallel.ForEachAsync(files,
                                         new ParallelOptions() { MaxDegreeOfParallelism = 5 },
                                         async (filesystemRecord, token) =>
@@ -65,6 +91,8 @@ namespace Domorama.PictureFrame.Cli
                                             fileInfos.Add(info);
                                             Console.WriteLine($"{fileInfos.Count} / {files.Count} done");
                                         });
+
+
             // foreach (var filesystemRecord in files)
             // {
             //     var info = await dataSource.ReadBaseFileInfo(filesystemRecord);
@@ -74,12 +102,37 @@ namespace Domorama.PictureFrame.Cli
 
             sw2.Stop();
             var infoReadTime = sw2.Elapsed.TotalSeconds;
-            
-            var sw3 = Stopwatch.StartNew();
-            var fileGroups = fileGroupingService.GroupFiles(fileInfos);
-            sw3.Stop();
-            var groupingTime = sw3.Elapsed.TotalMilliseconds;
 
+            // Console.WriteLine($"{fileInfos.Count} files to group");
+            // var sw3 = Stopwatch.StartNew();
+            // var fileGroups = fileGroupingService.GroupFiles(fileInfos);
+            // sw3.Stop();
+            // Console.WriteLine($"Found {fileGroups.Count} file groups");
+            // var groupingTime = sw3.Elapsed.TotalMilliseconds;
+
+            ConcurrentDictionary<string, FileCompatibilityCheckResult> fileCompatibilityCheckResults = new();
+            Console.WriteLine($"{files.Count} files to check for compatibility");
+            await Parallel.ForEachAsync(fileInfos,
+                                        new ParallelOptions() { MaxDegreeOfParallelism = 5 },
+                                        async (basicFileInfo, token) =>
+                                        {
+                                            if (basicFileInfo.CompatibilityCheckResult != null)
+                                            {
+                                                fileCompatibilityCheckResults[basicFileInfo.Crc32Checksum] = basicFileInfo.CompatibilityCheckResult;
+                                            }
+                                            else
+                                            {
+                                                if (!fileCompatibilityCheckResults.TryGetValue(basicFileInfo.Crc32Checksum, out var fileCompatibility))
+                                                {
+                                                    fileCompatibility = await dataSource.CheckFileCompatibility(basicFileInfo.FilesystemRecord);
+                                                    fileCompatibilityCheckResults[basicFileInfo.Crc32Checksum] = fileCompatibility;
+                                                }
+
+                                                basicFileInfo.CompatibilityCheckResult = fileCompatibility;
+                                            }
+
+                                            Console.WriteLine($"{fileInfos.Count} / {files.Count} done");
+                                        });
             //
             // foreach (var metadata in pictures)
             // {

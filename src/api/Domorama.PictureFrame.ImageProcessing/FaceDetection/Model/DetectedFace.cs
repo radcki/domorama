@@ -2,7 +2,7 @@
 
 namespace Domorama.PictureFrame.ImageProcessing.FaceDetection.Model;
 
-public class DetectedFace(PixelBox boundingBox)
+public class DetectedFace(RelativeBox boundingBox)
 {
-    public PixelBox BoundingBox { get; set; } = boundingBox;
+    public RelativeBox BoundingBox { get; set; } = boundingBox;
 }
