@@ -80,7 +80,7 @@ public class FileGroupingService(FileGroupingServiceConfiguration configuration)
     //     return closed;
     // }
 
-    public FileLibraryEntryCollection? FindMatchingFileCollection(FileLibraryEntry newFile, List<FileLibraryEntryCollection> pictureFileCollections)
+    public FileLibraryEntryCollection? FindMatchingFileCollection(FileLibraryEntry newFile, ICollection<FileLibraryEntryCollection> pictureFileCollections)
     {
         if (configuration.MatchByFilenameInSameDirectory)
         {

@@ -41,15 +41,36 @@ namespace Domorama.PictureFrame.ImageProcessing.ColorPallete
                                    .OrderByDescending(x => labelCounts[x])
                                    .Select(i =>
                                            {
-                                               var r = center.ExtractChannel(2).Get<byte>(i);
-                                               var g = center.ExtractChannel(1).Get<byte>(i);
-                                               var b = center.ExtractChannel(0).Get<byte>(i);
-                                               var rgbColor = RGBColor.FromRGB8Bit(r, g, b);
+
+                                               var r = center.At<byte>(i, 2);
+                                               var g = center.At<byte>(i, 1);
+                                               var b = center.At<byte>(i, 0);
+                                               // var r = center.ExtractChannel(2).Get<byte>(i);
+                                               // var g = center.ExtractChannel(1).Get<byte>(i);
+                                               // var b = center.ExtractChannel(0).Get<byte>(i);
+                                               var rgb = RGBColor.FromRGB8Bit(r, g, b);
+                                               var xyY = _rgbToXyYColorConverter.Convert(rgb);
+                                               var lchab = _rgbToLChabColorConverter.Convert(rgb);
                                                return new Color()
                                                       {
-                                                          RgbColor = rgbColor,
-                                                          XyYColor = _rgbToXyYColorConverter.Convert(rgbColor),
-                                                          LChabColor = _rgbToLChabColorConverter.Convert(rgbColor)
+                                                          RgbColor = new ColorRgb()
+                                                                     {
+                                                                         B = b,
+                                                                         G = g,
+                                                                         R = r
+                                                                     },
+                                                          XyYColor = new ColorxyY()
+                                                                     {
+                                                                         X = xyY.x,
+                                                                         Luminance = xyY.Luminance,
+                                                                         Y = xyY.y
+                                                                     },
+                                                          LChabColor = new ColorLChab()
+                                                                       {
+                                                                           C = lchab.C,
+                                                                           L = lchab.L,
+                                                                           H = lchab.h
+                                                                       }
                                                       };
                                            })
                                    .Take(5)

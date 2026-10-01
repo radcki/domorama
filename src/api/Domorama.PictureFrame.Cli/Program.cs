@@ -1,11 +1,13 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
+using Domorama.PictureFrame.Cli.PreviewHelpers;
 using Domorama.PictureFrame.Core.DataSource;
 using Domorama.PictureFrame.Core.DataSource.Filesystem;
 using Domorama.PictureFrame.Core.Library;
 using Domorama.PictureFrame.Core.Library.DataStorage;
 using Domorama.PictureFrame.Core.Library.Files;
 using Domorama.PictureFrame.Core.Library.Files.Services;
+using Domorama.PictureFrame.Core.Library.PictureFrameEntries;
 using Domorama.PictureFrame.Core.Model;
 using Microsoft.Extensions.DependencyInjection;
 using OpenCvSharp;
@@ -40,10 +42,23 @@ namespace Domorama.PictureFrame.Cli
                                                                                            ]
                                                                                        })
                           .AddTransient<FilesystemPictureDataSource>()
+                          .AddTransient<IPictureDataSource, FilesystemPictureDataSource>(x => x.GetRequiredService<FilesystemPictureDataSource>())
+                          .AddTransient<MatLoadingService>()
+                          .AddTransient<DominantColorsPreviewService>()
+                          .AddTransient<FaceDetectionPreviewService>()
                           .AddSingleton<FileGroupingServiceConfiguration>()
                           .AddTransient<FileGroupingService>()
+                          .AddTransient<JsonDataStorageConfiguration<FileLibraryData>>(provider => new()
+                                                                                                   {
+                                                                                                       Path = "library.json"
+                                                                                                   })
+                          .AddTransient<JsonDataStorageConfiguration<PictureFrameEntryLibraryData>>(provider => new()
+                                                                                                                {
+                                                                                                                    Path = "picture-library.json"
+                                                                                                                })
                           .AddTransient(typeof(IDataStorage<>), typeof(JsonDataStorage<>))
                           .AddSingleton<FileLibrary>()
+                          .AddSingleton<PictureFrameEntryLibrary>()
                           .AddLogging()
                           .BuildServiceProvider();
 
@@ -55,10 +70,11 @@ namespace Domorama.PictureFrame.Cli
             var dominantColorService = services.GetRequiredService<IDominantColorService>();
             var fileGroupingService = services.GetRequiredService<FileGroupingService>();
             var fileLibrary = services.GetRequiredService<FileLibrary>();
+            var pictureLibrary = services.GetRequiredService<PictureFrameEntryLibrary>();
 
-            await fileLibrary.Load();
+            await fileLibrary.LoadAsync();
             fileLibrary.EnableAutosave();
-            
+
             var sw = Stopwatch.StartNew();
             var files = await dataSource.ScanAsync().ToListAsync();
             sw.Stop();
@@ -77,6 +93,35 @@ namespace Domorama.PictureFrame.Cli
 
             await fileLibrary.PerformPendingFileGrouping(groupingProgress);
 
+            await pictureLibrary.LoadAsync();
+            pictureLibrary.EnableAutosave();
+
+            var captureDateExtractionProgress = new Progress<PictureLibraryTaskProgress>();
+            captureDateExtractionProgress.ProgressChanged += (sender, progress) => { Console.WriteLine($"Capture date extraction progress: {progress.Done}/{progress.Total} (Elapsed: {progress.Elapsed:g})"); };
+            await pictureLibrary.PerformCaptureDateExtraction(captureDateExtractionProgress);
+
+            var dominantColorExtractionProgress = new Progress<PictureLibraryTaskProgress>();
+            dominantColorExtractionProgress.ProgressChanged += (sender, progress) => { Console.WriteLine($"Dominant color extraction progress: {progress.Done}/{progress.Total} (Elapsed: {progress.Elapsed:g})"); };
+            await pictureLibrary.PerformDominantColorsExtraction(dominantColorExtractionProgress);
+
+            var faceDetectionProgress = new Progress<PictureLibraryTaskProgress>();
+            faceDetectionProgress.ProgressChanged += (sender, progress) => { Console.WriteLine($"Face detection progress: {progress.Done}/{progress.Total} (Elapsed: {progress.Elapsed:g})"); };
+            await pictureLibrary.PerformFaceDetection(faceDetectionProgress);
+
+            var geolocationExtractionProgress = new Progress<PictureLibraryTaskProgress>();
+            geolocationExtractionProgress.ProgressChanged += (sender, progress) => { Console.WriteLine($"Geolocation extraction  progress: {progress.Done}/{progress.Total} (Elapsed: {progress.Elapsed:g})"); };
+            await pictureLibrary.PerformGeolocationExtraction(geolocationExtractionProgress);
+
+            // var colorPreviewService = services.GetRequiredService<DominantColorsPreviewService>();
+            // foreach (var pictureFrameEntry in pictureLibrary.GetEntries())
+            // {
+            //     await colorPreviewService.Show(pictureFrameEntry);
+            // }
+            var faceDetectionPreviewService = services.GetRequiredService<FaceDetectionPreviewService>();
+            foreach (var pictureFrameEntry in pictureLibrary.GetEntries())
+            {
+                await faceDetectionPreviewService.Show(pictureFrameEntry);
+            }
 
             var scanTime
                 = sw.Elapsed.TotalSeconds;

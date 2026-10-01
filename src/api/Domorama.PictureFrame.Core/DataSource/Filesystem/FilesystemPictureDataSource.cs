@@ -20,7 +20,9 @@ public class FilesystemPictureDataSourceConfiguration()
     // ];
 }
 
-public class FilesystemPictureDataSource(FilesystemPictureDataSourceConfiguration configuration) : IPictureDataSource
+public class FilesystemPictureDataSource(
+    FilesystemPictureDataSourceConfiguration configuration,
+    MatLoadingService matLoadingService) : IPictureDataSource
 {
     private readonly MagickFormat[] _opencvSupportedFormats =
     [
@@ -63,11 +65,44 @@ public class FilesystemPictureDataSource(FilesystemPictureDataSourceConfiguratio
         }
     }
 
+    /// <inheritdoc />
+    public async Task<Mat?> LoadImage(FileLibraryEntry fileLibraryEntry)
+    {
+        await EnsureCompatibilityCheckDone(fileLibraryEntry);
+        var path = fileLibraryEntry.FilesystemRecord.GetFullPath();
+        switch (fileLibraryEntry.CompatibilityCheckResult)
+        {
+            case { IsOpenCvReadable: true }:
+            {
+                var mat = await matLoadingService.LoadMat(path);
+                return mat;
+            }
+            case { IsPicture: true }:
+            {
+                var mat = await matLoadingService.LoadMatThroughImageMagick(path);
+                return mat;
+            }
+        }
+
+        return null;
+    }
+
+
+    private async Task EnsureCompatibilityCheckDone(FileLibraryEntry fileLibraryEntry)
+    {
+        if (!fileLibraryEntry.CompatibilityCheckDone || fileLibraryEntry.CompatibilityCheckResult == null)
+        {
+            var compatibility = await CheckFileCompatibility(fileLibraryEntry.FilesystemRecord);
+            fileLibraryEntry.CompatibilityCheckResult = compatibility;
+            fileLibraryEntry.CompatibilityCheckDone = true;
+        }
+    }
+
     public async Task<FileLibraryEntry> ReadBasicFileInfo(FilesystemRecord filesystemRecord)
     {
         var path = filesystemRecord.GetFullPath();
         await using var fileStream = new FileStream(path, FileMode.Open);
-        
+
         fileStream.Position = 0;
 
         var crc32 = CheckCrc32(fileStream);
@@ -94,7 +129,7 @@ public class FilesystemPictureDataSource(FilesystemPictureDataSourceConfiguratio
     {
         var path = filesystemRecord.GetFullPath();
         await using var fileStream = new FileStream(path, FileMode.Open);
-        var imageInfo = GetImageInfo(fileStream);
+        var imageInfo = GetMagickImage(fileStream);
         var isPicture = imageInfo != null;
         var isOpenCvReadable = imageInfo != null && _opencvSupportedFormats.Contains(imageInfo.Format);
         return new FileCompatibilityCheckResult()
@@ -104,7 +139,7 @@ public class FilesystemPictureDataSource(FilesystemPictureDataSourceConfiguratio
                };
     }
 
-    private MagickImage? GetImageInfo(Stream stream)
+    private MagickImage? GetMagickImage(Stream stream)
     {
         try
         {

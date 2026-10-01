@@ -1,33 +1,38 @@
-﻿namespace Domorama.PictureFrame.Core.Model;
+﻿using Newtonsoft.Json;
 
-public class FileLibraryEntryCollection(IEnumerable<FileLibraryEntry> fileInstances)
+namespace Domorama.PictureFrame.Core.Model;
+
+public class FileLibraryEntryCollection
 {
-    public FileLibraryEntryCollection() : this([])
+    public FileLibraryEntryCollection()
     {
     }
 
-    public Guid FileLibraryEntryCollectionId { get; init; } = Guid.CreateVersion7();
-    private readonly List<FileLibraryEntry> _items = fileInstances.ToList();
-    public IEnumerable<FileLibraryEntry> Items => _items.AsEnumerable();
+    public FileLibraryEntryCollection(IEnumerable<FileLibraryEntry> fileInstances)
+    {
+        Items = fileInstances.ToList();
+    }
 
+    public Guid FileLibraryEntryCollectionId { get; init; } = Guid.CreateVersion7();
+    public List<FileLibraryEntry> Items { get; init; } = [];
     public DateTime LastUpdateDate { get; private set; } = DateTime.UtcNow;
 
-    public bool Contains(FileLibraryEntry file) => _items.Contains(file);
+    public bool Contains(FileLibraryEntry file) => Items.Contains(file);
 
     public bool IsEmpty()
     {
-        return _items.Count == 0;
+        return Items.Count == 0;
     }
 
     public void Add(FileLibraryEntry newFileLibraryEntry)
     {
-        _items.Add(newFileLibraryEntry);
+        Items.Add(newFileLibraryEntry);
         LastUpdateDate = DateTime.UtcNow;
     }
 
     public bool TryRemove(FileLibraryEntry file)
     {
-        if (!_items.Remove(file))
+        if (!Items.Remove(file))
             return false;
 
         LastUpdateDate = DateTime.UtcNow;

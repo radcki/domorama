@@ -10,7 +10,7 @@ namespace Domorama.PictureFrame.Core.Library.Files;
 public class FileLibrary(FileGroupingService fileGroupingService, FilesystemPictureDataSource filesystemPictureDataSource, IDataStorage<FileLibraryData> storage, ILogger<FileLibrary> logger)
 {
     private readonly Dictionary<Guid, FileLibraryEntry> _knownFiles = [];
-    private readonly List<FileLibraryEntryCollection> _pictureFileCollections = [];
+    private readonly Dictionary<Guid, FileLibraryEntryCollection> _pictureFileCollections = [];
     private readonly Dictionary<Guid, FileLibraryEntryCollection> _fileCollectionsIndex = [];
     private bool _isLoaded;
 
@@ -18,7 +18,7 @@ public class FileLibrary(FileGroupingService fileGroupingService, FilesystemPict
     private DateTime LastModificationAt { get; set; }
     private bool HasPendingChanges() => LastModificationAt > SavedAt;
 
-    public async Task Load()
+    public async Task LoadAsync()
     {
         if (_isLoaded)
         {
@@ -33,7 +33,7 @@ public class FileLibrary(FileGroupingService fileGroupingService, FilesystemPict
 
         foreach (var dataPictureFileInfoCollection in data.PictureFileInfoCollections)
         {
-            _pictureFileCollections.AddRange(dataPictureFileInfoCollection);
+            _pictureFileCollections.Add(dataPictureFileInfoCollection.FileLibraryEntryCollectionId, dataPictureFileInfoCollection);
             foreach (var basicFileInfo in dataPictureFileInfoCollection.Items)
             {
                 _fileCollectionsIndex[basicFileInfo.FileId] = dataPictureFileInfoCollection;
@@ -47,14 +47,14 @@ public class FileLibrary(FileGroupingService fileGroupingService, FilesystemPict
     {
         if (!_isLoaded)
         {
-            await Load();
+            await LoadAsync();
         }
     }
 
     public async Task<IEnumerable<FileLibraryEntryCollection>> GetPictureFileCollectionsAsync()
     {
         await EnsureLoaded();
-        return _pictureFileCollections.AsReadOnly();
+        return _pictureFileCollections.Values;
     }
     
     public async Task<FileLibraryEntry?> TryGetFileByIdAsync(Guid fileId)
@@ -62,6 +62,12 @@ public class FileLibrary(FileGroupingService fileGroupingService, FilesystemPict
         await EnsureLoaded();
         _knownFiles.TryGetValue(fileId, out FileLibraryEntry? file);
         return file;
+    }
+    public async Task<FileLibraryEntryCollection?> TryGetPictureFileCollectionsAsync(Guid fileLibraryEntryCollectionId)
+    {
+        await EnsureLoaded();
+        _pictureFileCollections.TryGetValue(fileLibraryEntryCollectionId, out var fileLibraryEntryCollection);
+        return fileLibraryEntryCollection;
     }
 
     public void EnableAutosave()
@@ -79,7 +85,7 @@ public class FileLibrary(FileGroupingService fileGroupingService, FilesystemPict
                 logger.LogInformation($"Saving library changes...");
                 var data = new FileLibraryData();
                 data.KnownFiles.AddRange(_knownFiles.Values);
-                data.PictureFileInfoCollections.AddRange(_pictureFileCollections);
+                data.PictureFileInfoCollections.AddRange(_pictureFileCollections.Values);
                 await storage.Save(data);
                 NotifyLibrarySaved();
                 logger.LogInformation($"Library saved");
@@ -182,11 +188,11 @@ public class FileLibrary(FileGroupingService fileGroupingService, FilesystemPict
         {
             try
             {
-                var collection = fileGroupingService.FindMatchingFileCollection(fileInfo, _pictureFileCollections);
+                var collection = fileGroupingService.FindMatchingFileCollection(fileInfo, _pictureFileCollections.Values);
                 if (collection == null)
                 {
                     collection = new FileLibraryEntryCollection([fileInfo]);
-                    _pictureFileCollections.Add(collection);
+                    _pictureFileCollections.Add(collection.FileLibraryEntryCollectionId, collection);
                     _fileCollectionsIndex[fileInfo.FileId] = collection;
                 }
                 else
@@ -218,7 +224,7 @@ public class FileLibrary(FileGroupingService fileGroupingService, FilesystemPict
         fileInfoCollection.TryRemove(fileLibraryEntry);
         if (fileInfoCollection.IsEmpty())
         {
-            _pictureFileCollections.Remove(fileInfoCollection);
+            _pictureFileCollections.Remove(fileInfoCollection.FileLibraryEntryCollectionId);
         }
 
         _fileCollectionsIndex.Remove(fileLibraryEntry.FileId);

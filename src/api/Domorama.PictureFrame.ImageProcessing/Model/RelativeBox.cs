@@ -16,7 +16,7 @@ public record RelativeBox(RelativePoint Origin, RelativeSize RelativeSize)
     public static RelativeBox FromPixelBox(PixelBox pixelBox, PixelSize fullSize)
     {
         var relativeOrigin = RelativePoint.FromPixel(pixelBox.Origin, fullSize);
-        var relativeSize = Model.RelativeSize.FromPixelSize(pixelBox.Size, fullSize);
+        var relativeSize = RelativeSize.FromPixelSize(pixelBox.Size, fullSize);
         return new RelativeBox(relativeOrigin, relativeSize);
     }
 }

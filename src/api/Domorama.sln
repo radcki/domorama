@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domorama.Core", "Domorama.C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domorama.PictureFrame.Core", "Domorama.PictureFrame.Core\Domorama.PictureFrame.Core.csproj", "{B86955F1-B9E4-487E-BAC7-9531AD683B30}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domorama.PictureFrame.Core.Tests", "Domorama.PictureFrame.Core.Tests\Domorama.PictureFrame.Core.Tests.csproj", "{47D02EA7-76E8-49C7-A7AF-CD0C2B478D28}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{B86955F1-B9E4-487E-BAC7-9531AD683B30}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B86955F1-B9E4-487E-BAC7-9531AD683B30}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B86955F1-B9E4-487E-BAC7-9531AD683B30}.Release|Any CPU.Build.0 = Release|Any CPU
+		{47D02EA7-76E8-49C7-A7AF-CD0C2B478D28}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47D02EA7-76E8-49C7-A7AF-CD0C2B478D28}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47D02EA7-76E8-49C7-A7AF-CD0C2B478D28}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47D02EA7-76E8-49C7-A7AF-CD0C2B478D28}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

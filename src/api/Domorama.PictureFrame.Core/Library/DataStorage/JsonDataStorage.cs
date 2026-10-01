@@ -3,9 +3,14 @@ using Microsoft.Extensions.Logging;
 
 namespace Domorama.PictureFrame.Core.Library.DataStorage;
 
-public class JsonDataStorage<T>(ILogger<JsonDataStorage<T>> logger) : IDataStorage<T> where T : new()
+public class JsonDataStorageConfiguration<T>()
 {
-    private readonly string _path = "library.json";
+    public string Path { get; init; }
+}
+
+public class JsonDataStorage<T>(ILogger<JsonDataStorage<T>> logger, JsonDataStorageConfiguration<T> configuration) : IDataStorage<T> where T : new()
+{
+    private readonly string _path = configuration.Path;
     private ILogger<JsonDataStorage<T>> _logger = logger;
 
 

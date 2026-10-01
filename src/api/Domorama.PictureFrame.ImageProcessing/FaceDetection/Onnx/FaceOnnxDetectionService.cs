@@ -4,6 +4,7 @@ using Domorama.PictureFrame.ImageProcessing.Model;
 using FaceONNX;
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
+using OpenCvSharp.GdipExtensions;
 
 namespace Domorama.PictureFrame.ImageProcessing.FaceDetection.ONNX;
 

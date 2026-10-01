@@ -86,7 +86,8 @@ namespace Domorama.PictureFrame.ImageProcessing.Utils
         public static byte[] EncodeToJpg(Mat image, int quality = 90)
         {
             quality = Math.Clamp(quality, 0, 100);
-            return image.ImEncode(".jpg", new ImageEncodingParam(ImwriteFlags.JpegQuality, quality));
+            Cv2.ImEncode(".jpg", image, out var bytes, [new ImageEncodingParam(ImwriteFlags.JpegQuality, quality)]);
+            return bytes;
         }
 
         public static Rect ScaleRect(Rect rect, double factor)

@@ -6,7 +6,7 @@ namespace Domorama.PictureFrame.Core.Model;
 
 public class PictureInfo()
 {
-    public bool IsCaptureDateExtractionDon { get; set; } = false;
+    public bool IsCaptureDateExtractionDone { get; set; } = false;
     public bool IsGeolocationExtractionDone { get; set; } = false;
     public bool IsDominantColorExtractionDone { get; set; } = false;
     public bool IsFaceDetectionDone { get; set; } = false;
@@ -14,5 +14,5 @@ public class PictureInfo()
     public DateTime? CaptureDate { get; set; } = null;
     public List<DetectedFace> DetectedFaces { get; init; } = [];
     public List<Color> DominantColors { get; init; } = [];
-    public GeoLocation? GeoLocation { get; init; } = null;
+    public GeoLocation? GeoLocation { get; set; } = null;
 }

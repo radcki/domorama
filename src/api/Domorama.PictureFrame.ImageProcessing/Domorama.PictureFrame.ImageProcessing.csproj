@@ -9,12 +9,12 @@
   <ItemGroup>
     <PackageReference Include="Colourful" Version="3.2.0" />
     <PackageReference Include="FaceONNX" Version="4.1.1.3" />
-    <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.16.0" />
+    <PackageReference Include="Magick.NET-Q8-AnyCPU" Version="14.17.1" />
     <PackageReference Include="MetadataExtractor" Version="2.9.3" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.11" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-    <PackageReference Include="OpenCvSharp4" Version="4.13.0.20260627" />
-    <PackageReference Include="OpenCvSharp4.Extensions" Version="4.13.0.20260627" />
+    <PackageReference Include="OpenCvSharp5" Version="5.0.0.20260905" />
+    <PackageReference Include="OpenCvSharp5.Windows" Version="5.0.0.20260905" />
     <PackageReference Include="System.Net.Http.Json" Version="10.0.11" />
   </ItemGroup>
 

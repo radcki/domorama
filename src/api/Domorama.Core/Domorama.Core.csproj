@@ -11,4 +11,8 @@
       <ProjectReference Include="..\Domorama.PictureFrame.ImageProcessing\Domorama.PictureFrame.ImageProcessing.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="OpenCvSharp5" Version="5.0.0.20260905" />
+    </ItemGroup>
+
 </Project>
