@@ -6,4 +6,8 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Domorama.PictureFrame.ImageProcessing\Domorama.PictureFrame.ImageProcessing.csproj" />
+    </ItemGroup>
+
 </Project>
